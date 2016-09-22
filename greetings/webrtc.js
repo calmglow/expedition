@@ -3,7 +3,7 @@ var remoteVideo;
 var peerConnection;
 var logcount=0;
 
-var peerConnectionConfig = {'iceServers': [{'url': 'stun:stun.services.mozilla.com'}, {'url': 'stun:stun.l.google.com:19302'}]};
+var peerConnectionConfig = {'iceServers': [{'urls': ['stun:stun.services.mozilla.com']}, {'urls': ['stun:stun.l.google.com:19302']}]};
 
 navigator.getUserMedia = navigator.getUserMedia || navigator.mozGetUserMedia || navigator.webkitGetUserMedia;
 window.RTCPeerConnection = window.RTCPeerConnection || window.mozRTCPeerConnection || window.webkitRTCPeerConnection;
@@ -21,12 +21,9 @@ function pageReady() {
         video: true,
         audio: true,
     };
-
-    if(navigator.getUserMedia) {
-        navigator.getUserMedia(constraints, getUserMediaSuccess, rtcError);
-    } else {
-        alert('Your browser does not support getUserMedia API');
-    }
+    navigator.mediaDevices.getUserMedia(constraints)
+        .then(getUserMediaSuccess)
+        .catch(rtcError);
 }
 // log function
 function l(msg){
@@ -44,12 +41,12 @@ function start(isCaller) {
     l("start("+ peerRole+")");
     peerConnection = new RTCPeerConnection(peerConnectionConfig);
     peerConnection.onicecandidate = gotIceCandidate;
-    peerConnection.onaddstream = gotRemoteStream;
+    peerConnection.ontrack = gotRemoteStream;
     peerConnection.addStream(localStream);
 
     if(isCaller) {
         l("Caller: createOffer");
-        peerConnection.createOffer(gotDescription, rtcError);
+        peerConnection.createOffer().then(gotDescription).catch(rtcError);
     }
 }
 
@@ -70,7 +67,8 @@ function gotIceCandidate(event) {
 
 function gotRemoteStream(event) {
     l("got remote stream");
-    remoteVideo.src = window.URL.createObjectURL(event.stream);
+    //remoteVideo.src = window.URL.createObjectURL(event.stream);
+    remoteVideo.srcObject = event.streams[0];
 }
 
 function rtcError(error) {
@@ -90,11 +88,12 @@ function gotMessageFromServer(message) {
         if(caller) peerConnection.setRemoteDescription(
             new RTCSessionDescription(signal.sdp), function(){},rtcError);
         else{
-            peerConnection.setRemoteDescription(
-                new RTCSessionDescription(signal.sdp), function() {
+            peerConnection.setRemoteDescription(new RTCSessionDescription(signal.sdp))
+                .then( function() {
                     l("Callee: CreateAnswer");
-                    peerConnection.createAnswer(gotDescription, rtcError);
-                }, rtcError);
+                    peerConnection.createAnswer().then(gotDescription).catch( rtcError);
+                })
+                .catch( rtcError);
         }
     } else if(signal.ice) {
         l('gotMessageFromServer: signal.ice' + signal.ice.candidate);
