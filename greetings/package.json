@@ -1,0 +1,23 @@
+{
+  "name": "expedition",
+  "version": "0.1.1",
+  "description": "webrtc example for beginner",
+  "main": "server.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/calmglow/expedition.git"
+  },
+  "author": "Jinho Choi",
+  "license": "ISC",
+  "homepage": "https://github.com/calmglow/expedition",
+  "dependencies": {
+    "express": "^4.15.0",
+    "ws": "latest"
+  },
+  "devDependencies": {
+  },
+  "scripts": {
+    "start": "node server.js"
+  }
+
+}
