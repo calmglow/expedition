@@ -33,7 +33,7 @@ function l(msg){
 function getUserMediaSuccess(stream) {
     l("getUserMediaSuccess");
     localStream = stream;
-    localVideo.src = window.URL.createObjectURL(stream);
+    localVideo.srcObject = stream;//window.URL.createObjectURL(stream);
 }
 
 function start(isCaller) {

@@ -14,10 +14,8 @@
     "express": "^4.15.0",
     "ws": "latest"
   },
-  "devDependencies": {
-  },
+  "devDependencies": {},
   "scripts": {
     "start": "node server.js"
   }
-
 }
