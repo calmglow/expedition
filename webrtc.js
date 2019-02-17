@@ -14,10 +14,11 @@ const getUserMediaConstraints = {
     video: true,
     audio: true,
 };
+const getDisplayMediaConstraints = {
+}
 async function pageReady() {
-    await navigator.mediaDevices.getUserMedia(getUserMediaConstraints)
-        .then(getUserMediaSuccess)
-        .catch(rtcError);
+    localStream = await navigator.mediaDevices.getUserMedia(getUserMediaConstraints)
+    localVideo.srcObject = localStream;
     serverConnection = new WebSocket('ws://127.0.0.1:1234');
     serverConnection.onmessage = gotMessageFromServer;
 }
@@ -35,7 +36,8 @@ function getUserMediaSuccess(stream) {
 function start(isCaller) {
     document.querySelector('#startDiv').style= 'display:none;';
     document.querySelector('#sdpSemantics').style= 'display:none;';
-    
+    document.querySelector('#displayMediaDiv').style.display = 'inline';
+    // refer to https://docs.google.com/document/d/1-ZfikoUtoJa9k-GZG1daN0BU3IjIanQ_JSscHxQesvU/edit
     peerConnectionConfig["sdpSemantics"]= document.querySelector('#sdpSemantics').value
     var peerRole = isCaller?"Caller":"Callee";
     l(`start ${peerRole}`);
@@ -68,6 +70,11 @@ function gotIceCandidate(event) {
 function gotRemoteStream(event) {
     l("got remote stream");
     remoteVideo.srcObject = event.streams[0];
+}
+async function getDisplayMedia() {
+    l("getDisplayMedia is called");
+    localStream = await navigator.mediaDevices.getDisplayMedia(getDisplayMediaConstraints);
+    localVideo.srcObject = localStream;
 }
 
 function rtcError(error) {
