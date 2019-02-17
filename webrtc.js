@@ -6,15 +6,16 @@ var peerConnection;
 var localStream;
 var logcount=0;
 
-var peerConnectionConfig = {'iceServers': [{'urls': ['stun:stun.services.mozilla.com']}, {'urls': ['stun:stun.l.google.com:19302']}]};
-
+const peerConnectionConfig = {
+    'iceServers': [{'urls': ['stun:stun.services.mozilla.com']}, {'urls': ['stun:stun.l.google.com:19302']}]
+};
+// refer to https://developer.mozilla.org/en-US/docs/Web/API/MediaTrackConstraints
+const getUserMediaConstraints = {
+    video: true,
+    audio: true,
+};
 async function pageReady() {
-    // refer to https://developer.mozilla.org/en-US/docs/Web/API/MediaTrackConstraints
-    var constraints = {
-        video: true,
-        audio: true,
-    };
-    await navigator.mediaDevices.getUserMedia(constraints)
+    await navigator.mediaDevices.getUserMedia(getUserMediaConstraints)
         .then(getUserMediaSuccess)
         .catch(rtcError);
     serverConnection = new WebSocket('ws://127.0.0.1:1234');
@@ -22,7 +23,7 @@ async function pageReady() {
 }
 // log function
 function l(msg){
-    console.log("log "+ logcount++ +":"+ msg);
+    console.log(`log ${logcount++}: ${msg}`);
 }
 
 function getUserMediaSuccess(stream) {
@@ -32,9 +33,12 @@ function getUserMediaSuccess(stream) {
 }
 
 function start(isCaller) {
-    document.querySelector('#startDiv').style='display:none;';
+    document.querySelector('#startDiv').style= 'display:none;';
+    document.querySelector('#sdpSemantics').style= 'display:none;';
+    
+    peerConnectionConfig["sdpSemantics"]= document.querySelector('#sdpSemantics').value
     var peerRole = isCaller?"Caller":"Callee";
-    l("start("+ peerRole+")");
+    l(`start ${peerRole}`);
     peerConnection = new RTCPeerConnection(peerConnectionConfig);
     peerConnection.onicecandidate = gotIceCandidate;
     peerConnection.ontrack = gotRemoteStream;
@@ -91,7 +95,7 @@ function gotMessageFromServer(message) {
                 .catch( rtcError);
         }
     } else if(signal.ice) {
-        l('gotMessageFromServer: signal.ice' + signal.ice.candidate);
+        l(`gotMessageFromServer: signal.ice : ${signal.ice.candidate}`);
         peerConnection.addIceCandidate(new RTCIceCandidate(signal.ice));
     } else if (signal.id) {
         l(`got client id: ${signal.id}`)
