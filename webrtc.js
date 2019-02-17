@@ -5,6 +5,7 @@ var serverConnection;
 var peerConnection;
 var localStream;
 var logcount=0;
+var wasDisplayMedia = false;
 
 const peerConnectionConfig = {
     'iceServers': [{'urls': ['stun:stun.services.mozilla.com']}, {'urls': ['stun:stun.l.google.com:19302']}]
@@ -52,12 +53,11 @@ function start(isCaller) {
     }
 }
 
-function gotDescription(description) {
+async function gotDescription(description) {
     l('got local description');
-    peerConnection.setLocalDescription(description, function () {
-        l('send local sdp to server');
-        serverConnection.send(JSON.stringify({'sdp': description}));
-    }, rtcError);
+    await peerConnection.setLocalDescription(description);
+    l('send local sdp to server');
+    serverConnection.send(JSON.stringify({'sdp': description}));
 }
 
 function gotIceCandidate(event) {
@@ -73,15 +73,19 @@ function gotRemoteStream(event) {
 }
 async function getDisplayMedia() {
     l("getDisplayMedia is called");
-    localStream = await navigator.mediaDevices.getDisplayMedia(getDisplayMediaConstraints);
+    localStream = wasDisplayMedia? 
+        await navigator.mediaDevices.getUserMedia(getUserMediaConstraints):
+        await navigator.mediaDevices.getDisplayMedia(getDisplayMediaConstraints);
+    wasDisplayMedia = !wasDisplayMedia;
     localVideo.srcObject = localStream;
+    peerConnection.getTransceivers()[1].sender.replaceTrack(localStream.getVideoTracks()[0]);
 }
 
 function rtcError(error) {
     console.log(error);
 }
 
-function gotMessageFromServer(message) {
+async function gotMessageFromServer(message) {
     var caller=true;
     var signal = JSON.parse(message.data);
     if(!peerConnection && !signal.id){
@@ -94,12 +98,9 @@ function gotMessageFromServer(message) {
         if(caller) peerConnection.setRemoteDescription(
             new RTCSessionDescription(signal.sdp), function(){},rtcError);
         else{
-            peerConnection.setRemoteDescription(new RTCSessionDescription(signal.sdp))
-                .then( function() {
-                    l("Callee: CreateAnswer");
-                    peerConnection.createAnswer().then(gotDescription).catch( rtcError);
-                })
-                .catch( rtcError);
+            await peerConnection.setRemoteDescription(new RTCSessionDescription(signal.sdp))
+            l("Callee: CreateAnswer");
+            peerConnection.createAnswer().then(gotDescription).catch( rtcError);
         }
     } else if(signal.ice) {
         l(`gotMessageFromServer: signal.ice : ${signal.ice.candidate}`);
