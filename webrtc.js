@@ -1,6 +1,9 @@
-var localVideo;
-var remoteVideo;
+const localVideo= document.getElementById('localVideo');
+const remoteVideo= document.getElementById('remoteVideo');
+
+var serverConnection;
 var peerConnection;
+var localStream;
 var logcount=0;
 
 var peerConnectionConfig = {'iceServers': [{'urls': ['stun:stun.services.mozilla.com']}, {'urls': ['stun:stun.l.google.com:19302']}]};
@@ -11,9 +14,6 @@ window.RTCIceCandidate = window.RTCIceCandidate || window.mozRTCIceCandidate || 
 window.RTCSessionDescription = window.RTCSessionDescription || window.mozRTCSessionDescription || window.webkitRTCSessionDescription;
 
 function pageReady() {
-    localVideo = document.getElementById('localVideo');
-    remoteVideo = document.getElementById('remoteVideo');
-
     serverConnection = new WebSocket('ws://127.0.0.1:1234');
     serverConnection.onmessage = gotMessageFromServer;
 
@@ -33,10 +33,11 @@ function l(msg){
 function getUserMediaSuccess(stream) {
     l("getUserMediaSuccess");
     localStream = stream;
-    localVideo.srcObject = stream;//window.URL.createObjectURL(stream);
+    localVideo.srcObject = stream;
 }
 
 function start(isCaller) {
+    document.querySelector('#startDiv').style='display:none;';
     var peerRole = isCaller?"Caller":"Callee";
     l("start("+ peerRole+")");
     peerConnection = new RTCPeerConnection(peerConnectionConfig);
@@ -67,7 +68,6 @@ function gotIceCandidate(event) {
 
 function gotRemoteStream(event) {
     l("got remote stream");
-    //remoteVideo.src = window.URL.createObjectURL(event.stream);
     remoteVideo.srcObject = event.streams[0];
 }
 
@@ -77,14 +77,14 @@ function rtcError(error) {
 
 function gotMessageFromServer(message) {
     var caller=true;
-    if(!peerConnection){
-        start(false);
-        caller=false;
-    }
-
     var signal = JSON.parse(message.data);
+    if(!peerConnection && !signal.id){
+        caller=false;
+        start(caller);
+    }
     if(signal.sdp) {
         l('gotMessageFromServer: signal.sdp' );
+        document.querySelector('#guide').innerHTML='';
         if(caller) peerConnection.setRemoteDescription(
             new RTCSessionDescription(signal.sdp), function(){},rtcError);
         else{
@@ -98,5 +98,11 @@ function gotMessageFromServer(message) {
     } else if(signal.ice) {
         l('gotMessageFromServer: signal.ice' + signal.ice.candidate);
         peerConnection.addIceCandidate(new RTCIceCandidate(signal.ice));
+    } else if (signal.id) {
+        l(`got client id: ${signal.id}`)
+        if (signal.id%2 === 1) {
+            document.querySelector('#guide').innerHTML='please open other tab to test peer connection';
+            document.querySelector('#startDiv').style='display:none;';
+        }
     }
 }

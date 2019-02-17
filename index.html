@@ -1,20 +1,32 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
     <head>
         <meta charset="UTF-8">
-        <script src="webrtc.js"></script>
     </head>
-
     <body>
-        <span>local: <video id="localVideo" autoplay muted style="width:40%;"></video></span>
-        <span>remote: <video id="remoteVideo" autoplay style="width:40%;"></video></span>
-
-        <br />
-
-        <input type="button" id="start" onclick="start(true)" value="영상통화 시작"></input>
-
-        <script type="text/javascript">
-            pageReady();
-        </script>
+        <h1>WebRTC simple test</h1>
+        <div style="width:48%;float:left;">
+            <span>
+                <h1>Local</h1> 
+                <video id="localVideo" autoplay muted style="-webkit-filter: grayscale(100%);"></video>
+            </span>
+            <div id='guide' style="position:absolute;top:20%;font-size: 1.5em;color:red;"></div>
+            <div id='startDiv' style="position:absolute;top:30%;left:10%;">
+                <input type="button" id="startButton" onclick="start(true)" value="Connect to peer" style="background-color:#4CAF50;border: none;color:white;padding: 15px 32px;text-align: center;font-size:1.5em;"></input>
+            </div>
+        </div>
+        <div style="width:48%;float:left;">
+            <span >
+                <h1>Remote</h1>
+                <video id="remoteVideo" autoplay style="width:100%;background-color: goldenrod;"></video>
+            </span>
+        </div>
+        <div>
+            
+        </div>
     </body>
+    <script src="webrtc.js"></script>
+    <script type="text/javascript">
+        pageReady();
+    </script>
 </html>
