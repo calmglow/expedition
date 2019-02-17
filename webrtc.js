@@ -8,17 +8,16 @@ var logcount=0;
 
 var peerConnectionConfig = {'iceServers': [{'urls': ['stun:stun.services.mozilla.com']}, {'urls': ['stun:stun.l.google.com:19302']}]};
 
-function pageReady() {
-    serverConnection = new WebSocket('ws://127.0.0.1:1234');
-    serverConnection.onmessage = gotMessageFromServer;
-
+async function pageReady() {
     var constraints = {
         video: true,
         audio: true,
     };
-    navigator.mediaDevices.getUserMedia(constraints)
+    await navigator.mediaDevices.getUserMedia(constraints)
         .then(getUserMediaSuccess)
         .catch(rtcError);
+    serverConnection = new WebSocket('ws://127.0.0.1:1234');
+    serverConnection.onmessage = gotMessageFromServer;
 }
 // log function
 function l(msg){
